@@ -1,5 +1,5 @@
 /* How to Survive – service worker : fonctionnement 100 % hors-ligne */
-const CACHE = "hts-v1.8";
+const CACHE = "hts-v1.9";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./privacy.html",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });

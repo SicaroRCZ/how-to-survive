@@ -3107,6 +3107,7 @@ var TOOLS=[
    ["t-carte","list","Carte et boussole : mode d'emploi","Rejoindre un point, contourner un obstacle, se situer","#a8bd6e"],
    ["t-position","pin","Ma position GPS","Coordonnées, altitude, précision, en direct","#93a0e3"],
    ["t-soleil","sun","Soleil et lune","Lever, coucher, temps avant la nuit, phase de lune","#e8b94a"]]],
+ ["Prévoir",[["t-reserves","calc","Calculateur de réserves","Eau, nourriture, hygiène et animaux selon votre foyer et la durée","#74b6d8"]]],
  ["Mesurer",[["t-niveau","target","Niveau et pente","Niveau à bulle et inclinomètre (pente, avalanche)","#5fb3a8"],
    ["t-orage","alert","Distance d'un orage","Compter entre l'éclair et le tonnerre","#c4a5ff"],
    ["t-chrono","clock","Chronomètre et minuteurs","Garrot, purification de l'eau, compte à rebours","#d9a35f"]]],
@@ -3455,7 +3456,7 @@ document.addEventListener("click",e=>{
   const pg=t.closest("[data-ptgo]");if(pg){CMP.target={type:"pt",i:+pg.dataset.ptgo};$("#ptList").innerHTML=ptListHTML();tlWatch(()=>cmpTgtRender());if(!TL.sens)cmpStart();toast("Suivez la flèche orange sur la boussole");return}
   const pd=t.closest("[data-ptdel]");if(pd){const a=getPts();toast("Point supprimé");a.splice(+pd.dataset.ptdel,1);store.set("hts-points",a);CMP.target=null;$("#ptList").innerHTML=ptListHTML();return}
 });
-var TOOLV={"t-boussole":viewBoussole,"t-carte":viewCarte,"t-niveau":viewNiveau,"t-lampe":viewLampe,"t-sifflet":viewSifflet,"t-position":viewPositionT,"t-soleil":viewSoleil,"t-orage":viewOrage,"t-rcp":viewRcp,"t-chrono":viewChrono,outils:viewOutils};
+var TOOLV={"t-boussole":viewBoussole,"t-carte":viewCarte,"t-niveau":viewNiveau,"t-lampe":viewLampe,"t-sifflet":viewSifflet,"t-position":viewPositionT,"t-soleil":viewSoleil,"t-orage":viewOrage,"t-rcp":viewRcp,"t-chrono":viewChrono,"t-reserves":()=>{CALC_BACK="outils";viewCalc();CALC_BACK=null},outils:viewOutils};
 
 /* =====================================================================
    APPLICATION
@@ -3635,8 +3636,8 @@ function viewHome(){
     <button class="qa red" data-open="rcp"><span class="ico">${ic("heart")}</span>Réanimation</button>
     <button class="qa red" data-open="etouffement"><span class="ico">${ic("lungs")}</span>Étouffement</button>
     <button class="qa red" data-go="urgence"><span class="ico">${ic("torch")}</span>Signal SOS</button></div>
-   <div class="shd"><h3>Outils de terrain</h3><a href="#outils">Tous (11)</a></div>
-   <div class="hscroll">${[["t-boussole","compass","Boussole","#74b6d8"],["t-lampe","torch","Lampe","#ff7b30"],["morse","mega","Morse","#ff7b30"],["t-position","pin","Position GPS","#93a0e3"],["t-niveau","target","Niveau","#5fb3a8"],["t-soleil","sun","Soleil","#e8b94a"],["t-rcp","heart","Métronome RCP","#ff5b4c"]].map(([g,i,t,c])=>`<button class="tmini" data-go="${g}"><span class="ico plate" style="--pc:${c}">${ic(i)}</span>${t}</button>`).join("")}</div>
+   <div class="shd"><h3>Outils de terrain</h3><a href="#outils">Tous (12)</a></div>
+   <div class="hscroll">${[["t-boussole","compass","Boussole","#74b6d8"],["t-lampe","torch","Lampe","#ff7b30"],["morse","mega","Morse","#ff7b30"],["t-position","pin","Position GPS","#93a0e3"],["t-reserves","calc","Réserves","#74b6d8"],["t-niveau","target","Niveau","#5fb3a8"],["t-soleil","sun","Soleil","#e8b94a"],["t-rcp","heart","Métronome RCP","#ff5b4c"]].map(([g,i,t,c])=>`<button class="tmini" data-go="${g}"><span class="ico plate" style="--pc:${c}">${ic(i)}</span>${t}</button>`).join("")}</div>
    <div class="shd"><h3>Crises les plus fréquentes</h3><a href="#crises">Toutes (${SCEN.length})</a></div>
    <div class="hscroll">${["si-coupure","si-inondation","si-tempete","si-canicule","si-incendie","si-froid","si-cyber","si-conflit"].map(id=>{const s=SCEN.find(x=>x.id===id);return `<button class="scen-t" style="flex:none;width:140px" data-crgo="${s.id}" data-m="now">${crIco(s)}<b>${esc(s.t)}</b></button>`}).join("")}</div>
    <button class="score" data-go="preparer"><div class="ring" style="--p:${P.score};--c:${ringColor(P.score)}">${P.score}%</div><div><h3>Votre préparation</h3><p>Sac, fiche familiale, réserves, abris et crises.</p>
@@ -3928,15 +3929,17 @@ function updBag(){
 }
 
 /* ---------- Réserves ---------- */
-function calcState(){return Object.assign({ad:2,en:0,bb:0,days:3,lvl:"rec",hot:false},store.get("hts-calc",{}))}
+var CALC_BACK=null;
+function calcState(){return Object.assign({ad:2,en:0,bb:0,ag:0,fe:0,ch:0,ca:0,days:3,lvl:"rec",hot:false},store.get("hts-calc",{}))}
 function viewCalc(){
   store.set("hts-calc-seen",true);const C=calcState();
   const stepper=(k,t,s)=>`<div class="stp"><div><b>${t}</b><small>${s}</small></div><div class="stp-c"><button data-st="${k}" data-d="-1" aria-label="Moins">−</button><span id="v_${k}">${C[k]}</span><button data-st="${k}" data-d="1" aria-label="Plus">+</button></div></div>`;
-  page("preparer","Réserves","preparer",`<div class="dwrap">
+  page(CALC_BACK?"outils":"preparer","Réserves",CALC_BACK||"preparer",`<div class="dwrap">
    <div class="phead"><span class="ico plate" style="--pc:var(--pb)">${ic("calc")}</span><div><h1 class="h2">Réserves d'eau et de nourriture</h1><p>Les quantités à stocker pour votre foyer.</p></div></div>
-   <div class="card"><h4>${ic("users")}Votre foyer</h4>${stepper("ad","Adultes","13 ans et plus, aînés")}${stepper("en","Enfants","3 à 12 ans")}${stepper("bb","Bébés","0 à 2 ans")}</div>
+   <div class="card"><h4>${ic("users")}Votre foyer</h4>${stepper("ad","Adultes","13 à 64 ans")}${stepper("ag","Personnes âgées","65 ans et plus")}${stepper("fe","Femmes enceintes ou allaitantes","Besoins en eau et en énergie plus élevés")}${stepper("en","Enfants","3 à 12 ans")}${stepper("bb","Bébés","0 à 2 ans")}</div>
+   <div class="card"><h4>${ic("heart")}Animaux</h4>${stepper("ch","Chiens","Taille moyenne, environ 20 kg")}${stepper("ca","Chats","Ou petit animal de taille comparable")}</div>
    <div class="card"><h4>${ic("clock")}Durée d'autonomie</h4>
-    <div class="seg" style="margin:0">${[3,7,14,30].map(d=>`<button data-days="${d}" class="${C.days===d?"on":""}">${d} jours</button>`).join("")}</div>
+    <div class="seg" style="margin:0">${[3,7,14,30,60].map(d=>`<button data-days="${d}" class="${C.days===d?"on":""}">${d} jours</button>`).join("")}</div>
     <h4 style="margin-top:18px">${ic("drop")}Quantité d'eau</h4>
     <div class="seg" style="margin:0">${Object.entries(WL).map(([k,v])=>`<button data-lvl="${k}" class="${C.lvl===k?"on":""}">${v[1]}</button>`).join("")}</div>
     <label class="tgl"><input type="checkbox" id="hot" ${C.hot?"checked":""}><span>Forte chaleur ou effort physique (+50 % d'eau)</span></label></div>
@@ -3944,20 +3947,21 @@ function viewCalc(){
   renderCalc();$("#hot").onchange=e=>{const c=calcState();c.hot=e.target.checked;store.set("hts-calc",c);renderCalc()};
 }
 function renderCalc(){
-  const C=calcState(),P=C.ad+C.en+C.bb,out=$("#calcOut");if(!out)return;
+  const C=calcState(),P=C.ad+C.en+C.bb+C.ag+C.fe,out=$("#calcOut");if(!out)return;
   if(!P){out.innerHTML=`<div class="empty">${ic("users")}<div>Ajoutez au moins une personne.</div></div>`;return}
-  const lv=WL[C.lvl][0],hot=C.hot?1.5:1,wDay=(C.ad*lv+C.en*lv*.67+C.bb)*hot,wTot=wDay*C.days,eq=C.ad+C.en*.68,kcal=(C.ad*2200+C.en*1500)*C.days,btl=Math.ceil(wTot/1.5),bid=Math.ceil(wTot/5);
+  const lv=WL[C.lvl][0],hot=C.hot?1.5:1,wPet=C.ch*1+C.ca*.25,wDay=(C.ad*lv+C.ag*lv+C.fe*(lv+.5)+C.en*lv*.67+C.bb)*hot+wPet,wTot=wDay*C.days,eq=C.ad+C.ag*.86+C.fe*1.18+C.en*.68,kcal=(C.ad*2200+C.ag*1900+C.fe*2600+C.en*1500)*C.days,btl=Math.ceil(wTot/1.5),bid=Math.ceil(wTot/5);
   const foods=FOOD.map(f=>{const q=f[1]*eq*C.days;let s;
-    if(f[2]==="g")s=q>=1000?fmt(q/1000)+" kg":Math.ceil(q)+" g";else if(f[2]==="ml")s=q>=1000?fmt(q/1000)+" L":Math.ceil(q/10)*10+" ml";else if(f[2]==="L")s=fmt(Math.ceil(q*2)/2)+" L";else s=Math.ceil(q)+" "+(Math.ceil(q)>1?"boîtes":"boîte");return [f[0],s]});
+    if(f[2]==="g")s=q>=1000?fmt(q/1000)+" kg":Math.ceil(q)+" g";else if(f[2]==="ml"){const r=Math.ceil(q/10)*10;s=r>=1000?fmt(q/1000)+" L":r+" ml"}else if(f[2]==="L")s=fmt(Math.ceil(q*2)/2)+" L";else s=Math.ceil(q)+" "+(Math.ceil(q)>1?"boîtes":"boîte");return [f[0],s]});
   const pd=P*C.days,other=[["Papier toilette",Math.max(1,Math.ceil(pd/5))+" rouleaux"],["Sacs poubelle",Math.max(3,Math.ceil(C.days*1.5))+" sacs"],["Cartouches de gaz 230 g (si réchaud)",Math.max(1,Math.ceil(eq*C.days/8))+" cartouches"],["Bougies ou lampes LED",Math.max(2,Math.ceil(C.days/2))+" + 1 lampe/pers."],["Piles de rechange","2 jeux par appareil"],["Savon, gel hydroalcoolique",Math.max(1,Math.ceil(pd/30))+" flacon(s)"],["Médicaments personnels",(C.days+7)+" jours de traitement"]];
+  if(C.ch||C.ca)other.push(...[C.ch?["Croquettes pour chien(s)",fmt(C.ch*.3*C.days)+" kg"]:null,C.ca?["Croquettes pour chat(s)",fmt(C.ca*.06*C.days)+" kg"]:null,C.ca?["Litière",Math.max(1,Math.ceil(C.ca*C.days/10))+" sac(s) de 5 kg"]:null,["Traitements et carnet de vaccination des animaux","1 lot"]].filter(Boolean));
   if(C.bb)other.unshift(["Couches (≈ 6/jour/bébé)",Math.ceil(C.bb*C.days*6)+" couches"],["Lait infantile en poudre (≈ 130 g/jour)",Math.ceil(C.bb*C.days*130/800)+" boîte(s) de 800 g"],["Petits pots (bébés de plus de 6 mois)",C.bb*C.days*2+" pots"]);
-  window._list=`RÉSERVES – ${C.ad} adulte(s), ${C.en} enfant(s), ${C.bb} bébé(s) – ${C.days} jours\n\nEAU : ${fmt(wTot,0)} L (${btl} bouteilles de 1,5 L ou ${bid} bidons de 5 L)\n\nNOURRITURE (≈ ${fmt(kcal/1000,0)} 000 kcal) :\n`+foods.map(f=>"- "+f[0]+" : "+f[1]).join("\n")+"\n\nAUTRES :\n"+other.map(o=>"- "+o[0]+" : "+o[1]).join("\n");
+  window._list=`RÉSERVES – ${C.ad} adulte(s), ${C.ag} personne(s) âgée(s), ${C.fe} femme(s) enceinte(s) ou allaitante(s), ${C.en} enfant(s), ${C.bb} bébé(s)${C.ch||C.ca?`, ${C.ch} chien(s), ${C.ca} chat(s)`:""} – ${C.days} jours\n\nEAU : ${fmt(wTot,0)} L (${btl} bouteilles de 1,5 L ou ${bid} bidons de 5 L)\n\nNOURRITURE (≈ ${fmt(kcal/1000,0)} 000 kcal) :\n`+foods.map(f=>"- "+f[0]+" : "+f[1]).join("\n")+"\n\nAUTRES :\n"+other.map(o=>"- "+o[0]+" : "+o[1]).join("\n");
   out.innerHTML=`<div class="kpis"><div class="kpi water"><small>Eau</small><b>${fmt(wTot,0)} L</b><span>${fmt(wDay)} L par jour</span></div><div class="kpi food"><small>Énergie</small><b>${fmt(kcal/1000,0)}k kcal</b><span>≈ ${fmt(kcal/C.days,0)} kcal par jour</span></div></div>
    <div class="card"><h4>${ic("drop")}Eau<span class="r">${WL[C.lvl][2]}</span></h4><div class="wv"><div><b>${btl}</b><small>bouteilles de 1,5 L</small></div><div class="or">ou</div><div><b>${bid}</b><small>bidons de 5 L</small></div></div>
-    <ul class="kv"><li><span>Par adulte</span><b>${fmt(lv*hot)} L/jour</b></li>${C.en?`<li><span>Par enfant</span><b>${fmt(lv*.67*hot)} L/jour</b></li>`:""}${C.bb?`<li><span>Par bébé (biberons inclus)</span><b>${fmt(hot)} L/jour</b></li>`:""}</ul>
+    <ul class="kv"><li><span>Par adulte</span><b>${fmt(lv*hot)} L/jour</b></li>${C.ag?`<li><span>Par personne âgée</span><b>${fmt(lv*hot)} L/jour</b></li>`:""}${C.fe?`<li><span>Par femme enceinte ou allaitante</span><b>${fmt((lv+.5)*hot)} L/jour</b></li>`:""}${C.en?`<li><span>Par enfant</span><b>${fmt(lv*.67*hot)} L/jour</b></li>`:""}${C.ch?`<li><span>Par chien</span><b>1 L/jour</b></li>`:""}${C.ca?`<li><span>Par chat</span><b>0,25 L/jour</b></li>`:""}${C.bb?`<li><span>Par bébé (biberons inclus)</span><b>${fmt(hot)} L/jour</b></li>`:""}</ul>
     <p class="hint">Pour les biberons, utilisez une eau en bouteille adaptée aux nourrissons. L'eau du robinet stockée en bidons alimentaires se renouvelle tous les 6 mois.</p></div>
    <div class="card"><h4>${ic("fork")}Nourriture longue conservation<span class="r">≈ ${fmt(eq)} éq. adulte</span></h4><ul class="kv">${foods.map(f=>`<li><span>${esc(f[0])}</span><b>${f[1]}</b></li>`).join("")}</ul>
-    <p class="hint">Base : ≈ 2 200 kcal/jour par adulte et ≈ 1 500 kcal/jour par enfant. Prévoyez des aliments qui se mangent sans cuisson, achetez ce que vous mangez déjà et faites tourner le stock.</p></div>
+    <p class="hint">Base : ≈ 2 200 kcal/jour par adulte, 1 900 par personne âgée, 2 600 par femme enceinte ou allaitante et 1 500 par enfant. Prévoyez des aliments qui se mangent sans cuisson, achetez ce que vous mangez déjà et faites tourner le stock.</p></div>
    <div class="card"><h4>${ic("pack")}Hygiène, énergie et divers</h4><ul class="kv">${other.map(o=>`<li><span>${esc(o[0])}</span><b>${o[1]}</b></li>`).join("")}</ul></div>
    <button class="btn pri block" id="copyList">${ic("copy")}Copier la liste de courses</button>
    <div class="card warn"><h4>${ic("alert")}À adapter</h4><ul class="bul"><li>Femmes enceintes ou allaitantes, adolescents actifs, personnes malades : prévoyez davantage d'eau et d'énergie.</li><li>Allergies, régimes particuliers, diabète : adaptez la liste et demandez conseil à votre médecin.</li><li>Ces quantités sont des estimations pour se préparer, pas une prescription nutritionnelle.</li></ul></div>
