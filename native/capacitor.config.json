@@ -1,0 +1,17 @@
+{
+  "appId": "com.howtosurvive.app",
+  "appName": "How to Survive",
+  "webDir": "www",
+  "backgroundColor": "#0e110d",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#FF7B30"
+    }
+  }
+}
